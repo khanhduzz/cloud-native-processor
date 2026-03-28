@@ -1,100 +1,92 @@
-# 💳 Payment Infrastructure Sandbox (2026)
+# Cloud-Native Polyglot Processor (2026)
 
-This repository contains a local-first AWS environment for building and testing resilient payment processing systems. It uses **LocalStack** to simulate S3, SQS, and DynamoDB locally on macOS.
+A local-first AWS environment demonstrating a distributed image processing system using .NET, Java, and LocalStack.
 
----
+## Architecture Overview
 
-## 🏗️ The Big Picture
+The system follows a decoupled microservice pattern:
 
-We are building a **Distributed Payment Pipeline** to handle high-volume financial transactions with a "Zero-Loss" architecture.
+1. Infrastructure: LocalStack (Docker) provides S3, SQS, and DynamoDB locally.
+2. Web API (.NET 9): Handles file uploads, stores metadata in PostgreSQL, and sends messages to SQS.
+3. Queue (AWS SQS): Acts as a buffer between the API and the background processor.
+4. Worker (Java 21): Consumes messages from SQS, processes images, and updates the database status.
 
-1. **Infrastructure:** LocalStack (Docker) provides the AWS services.
-2. **Producer (.NET):** Simulates a POS Terminal or Cloud Gateway sending payment requests.
-3. **Queue (SQS):** Acts as a buffer to ensure messages are never lost during high traffic.
-4. **Consumer (Java):** Processes the payments, saves receipts to S3, and logs history to DynamoDB.
+## Tech Stack
 
----
+- Backend API: .NET 9 (C#) + Entity Framework Core
+- Background Worker: Java 21 + Spring Boot
+- Database: PostgreSQL 16
+- Cloud Simulation: LocalStack (S3, SQS)
+- Containerization: Docker & Docker Compose
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 
-- **Docker Desktop** (Required for the "Cloud" container)
-- **AWS CLI v2** & **awslocal** (`pip install awscli-local` or `brew install localstack/tap/localstack-cli`)
-- **LocalStack Auth Token** (Get yours at [app.localstack.cloud](https://app.localstack.cloud))
+- Docker Desktop
+- .NET 9 SDK
+- Java 21 JDK
+- AWS CLI & awslocal (pip install awscli-local)
 
 ### 2. Environment Setup
 
-Create a `.env` file in the root directory:
+Create a .env file in the root directory:
 
 ```bash
-LOCALSTACK_AUTH_TOKEN=ls-your-token-here
+# Infrastructure
+LOCALSTACK_AUTH_TOKEN=your_token_here
+DB_USER=dev_user
+DB_PASSWORD=dev_password
+DB_NAME=cloud_native_db
+
+# AWS Config
+S3_BUCKET_NAME=wedding-uploads
+SQS_QUEUE_NAME=image-processing-queue
+
 ```
 
-# Start the cloud
+### 3. Running the Infrastructure
 
-docker compose up -d
+From the root folder, start the services:
 
-# Stop the cloud (Keep data)
+```bash
+# Infrastructure
+# Start Cloud + Database
+docker compose -f infra/docker-compose.yml up -d
 
-docker compose down
+# Check health
+curl http://localhost:4566/_localstack/health
 
-# Stop the cloud (Delete all data/volumes)
+```
 
-docker compose down -v
+## AWS CLI Commands (awslocal)
 
-# View live container logs
+#### S3 Storage
 
-docker compose logs -f localstack
+```bash
+# Create bucket
+awslocal s3 mb s3://wedding-uploads
 
-# Check if container is running
+# List files
+awslocal s3 ls s3://wedding-uploads
 
-docker ps
+```
 
-# Check status of AWS services (S3, SQS, etc.)
+#### SQS Messaging
 
-curl http://localhost:4566/\_localstack/health
+```bash
+# Create queue
+awslocal sqs create-queue --queue-name image-processing-queue
 
-# List all buckets
+# Check message count
+awslocal sqs get-queue-attributes --queue-url http://localhost:4566/000000000000/image-processing-queue --attribute-names ApproximateNumberOfMessages
 
-awslocal s3 ls
+```
 
-# Create a new bucket
+#### PostgreSQL
 
-awslocal s3 mb s3://payment-receipts-2026
+```bash
+# Access DB via terminal
+docker exec -it cloud_postgres psql -U dev_user -d cloud_native_db
 
-# List files inside a bucket
-
-awslocal s3 ls s3://payment-receipts-2026
-
-# Delete a bucket (and all files inside)
-
-awslocal s3 rb s3://payment-receipts-2026 --force
-
-# List all queues
-
-awslocal sqs list-queues
-
-# Create a payment request queue
-
-awslocal sqs create-queue --queue-name payment-request-queue
-
-# View message count and attributes
-
-awslocal sqs get-queue-attributes --queue-url http://localhost:4566/000000000000/payment-request-queue --attribute-names All
-
-# Manually receive/peek at a message
-
-awslocal sqs receive-message --queue-url http://localhost:4566/000000000000/payment-request-queue
-
-# Delete a queue
-
-awslocal sqs delete-queue --queue-url http://localhost:4566/000000000000/payment-request-queue
-
-# List all tables
-
-awslocal dynamodb list-tables
-
-# Delete a table
-
-awslocal dynamodb delete-table --table-name Payments History
+```
