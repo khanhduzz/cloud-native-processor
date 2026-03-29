@@ -1,5 +1,8 @@
+using Amazon.S3;
+using Backend.API.Configuration;
 using Backend.API.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,12 +22,27 @@ var connectionString = $"Host={Environment.GetEnvironmentVariable("DB_HOST")};" 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.AddControllers();
+builder.Services.Configure<AwsOptions>(options =>
+{
+    options.ServiceUrl = Environment.GetEnvironmentVariable("AWS_SERVICE_URL") ?? "http://localhost:4566";
+    options.BucketName = Environment.GetEnvironmentVariable("S3_BUCKET_NAME") ?? "wedding-uploads";
+    options.Region = Environment.GetEnvironmentVariable("AWS_REGION") ?? "us-east-1";
+});
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var awsOptions = sp.GetRequiredService<IOptions<AwsOptions>>().Value;
+    var config = new AmazonS3Config
+    {
+        ServiceURL = awsOptions.ServiceUrl,
+        ForcePathStyle = true
+    };
+    return new AmazonS3Client("test", "test", config);
+});
 
+builder.Services.AddControllers();
 var app = builder.Build();
 
 app.MapControllers();
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -32,29 +50,4 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// var summaries = new[]
-// {
-//     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-// };
-
-// app.MapGet("/weatherforecast", () =>
-// {
-//     var forecast = Enumerable.Range(1, 5).Select(index =>
-//         new WeatherForecast
-//         (
-//             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-//             Random.Shared.Next(-20, 55),
-//             summaries[Random.Shared.Next(summaries.Length)]
-//         ))
-//         .ToArray();
-//     return forecast;
-// })
-// .WithName("GetWeatherForecast");
-
 app.Run();
-
-// record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-// {
-//     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-// }
