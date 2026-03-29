@@ -35,14 +35,14 @@ services:
       - "127.0.0.1:4566:4566"
       - "127.0.0.1:4510-4559:4510-4559"
     environment:
-      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
-      - DEBUG=1
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - PERSISTENCE=1
-      - SNAPSHOT_SAVE_STRATEGY=SCHEDULED
-      - DEFAULT_REGION=us-east-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN}
+      DEBUG: ${DEBUG}
+      PERSISTENCE: ${PERSISTENCE}
+      DEFAULT_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      DOCKER_HOST: unix:///var/run/docker.sock
+      SNAPSHOT_SAVE_STRATEGY: SCHEDULED
     volumes:
       - "./ls_data:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -55,9 +55,9 @@ services:
       - ../.env
     restart: always
     environment:
-      POSTGRES_USER: dev_user
-      POSTGRES_PASSWORD: dev_password
-      POSTGRES_DB: cloud_native_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:

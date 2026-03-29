@@ -52,7 +52,8 @@ From the root folder, start the services:
 ```bash
 # Infrastructure
 # Start Cloud + Database
-docker compose -f infra/docker-compose.yml up -d
+docker compose -f infrastructure/docker-compose.yml up -d
+docker compose --env-file .env -f infrastructure/docker-compose.yml up -d
 
 # Check health
 curl http://localhost:4566/_localstack/health
@@ -65,11 +66,23 @@ curl http://localhost:4566/_localstack/health
 
 ```bash
 # Create bucket
-awslocal s3 mb s3://wedding-uploads
+awslocal s3 mb s3://cloud-native
 
 # List files
-awslocal s3 ls s3://wedding-uploads
+awslocal s3 ls s3://cloud-native
 
+```
+
+Testing the S3 in awslocal
+
+```
+https://app.localstack.cloud/inst/default/resources/s3
+
+# Upload a test file
+awslocal s3 cp my_test_file.txt s3://cloud-native/test.txt
+
+# List the bucket again to see it
+awslocal s3 ls s3://cloud-native/
 ```
 
 #### SQS Messaging
