@@ -1,4 +1,5 @@
 using Amazon.S3;
+using Amazon.SQS;
 using Backend.API.Configuration;
 using Backend.API.Data;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,16 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
         ForcePathStyle = true
     };
     return new AmazonS3Client("test", "test", config);
+});
+builder.Services.AddSingleton<IAmazonSQS>(sp =>
+{
+    var awsOptions = sp.GetRequiredService<IOptions<AwsOptions>>().Value;
+    var config = new AmazonSQSConfig
+    {
+        ServiceURL = awsOptions.ServiceUrl,
+        UseHttp = true
+    };
+    return new AmazonSQSClient("test", "test", config);
 });
 
 builder.Services.AddControllers();

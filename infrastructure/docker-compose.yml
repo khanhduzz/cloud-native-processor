@@ -1,30 +1,3 @@
-# services:
-#   localstack:
-#     container_name: localstack_main
-#     image: localstack/localstack:latest
-#     ports:
-#       - "127.0.0.1:4566:4566"            # Main Edge Proxy (API Gateway, S3, SQS, etc)
-#       - "127.0.0.1:4510-4559:4510-4559"  # Range for external services (like RDS/OpenSearch)
-#     environment:
-#       # --- Authentication ---
-#       - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
-      
-#       # --- Performance & Debugging ---
-#       - DEBUG=1                          # Set to 0 once everything is working
-#       - DOCKER_HOST=unix:///var/run/docker.sock
-      
-#       # --- Persistence (The "Safe" Button) ---
-#       - PERSISTENCE=1                    # Saves your work to disk
-#       - SNAPSHOT_SAVE_STRATEGY=SCHEDULED # Automatically saves every 15 seconds
-      
-#       # --- Local Environment Setup ---
-#       - DEFAULT_REGION=us-east-1
-#       - AWS_ACCESS_KEY_ID=test           # Use "test" to stay in the local sandbox
-#       - AWS_SECRET_ACCESS_KEY=test
-#     volumes:
-#       - "./ls_data:/var/lib/localstack"  # This is where your S3 files and DBs live
-#       - "/var/run/docker.sock:/var/run/docker.sock" # Allows LocalStack to run Lambdas
-
 services:
   localstack:
     container_name: localstack_main

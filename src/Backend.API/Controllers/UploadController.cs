@@ -6,6 +6,8 @@ using Backend.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using Amazon.SQS;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -14,12 +16,14 @@ public class UploadController : ControllerBase
     private readonly IAmazonS3 _s3Client;
     private readonly AppDbContext _context;
     private readonly AwsOptions _awsOptions;
+    private readonly IAmazonSQS _sqsClient;
 
-    public UploadController(IAmazonS3 s3Client, AppDbContext context, IOptions<AwsOptions> awsOptions)
+    public UploadController(IAmazonS3 s3Client, AppDbContext context, IOptions<AwsOptions> awsOptions, IAmazonSQS sqsClient)
     {
         _s3Client = s3Client;
         _context = context;
         _awsOptions = awsOptions.Value;
+        _sqsClient = sqsClient;
     }
 
     [HttpPost]
@@ -52,18 +56,20 @@ public class UploadController : ControllerBase
         _context.Images.Add(metadata);
         await _context.SaveChangesAsync();
 
+        // 3. Send SQS Message for Processing
+        var queueUrl = await _sqsClient.GetQueueUrlAsync("image-processing-queue");
+        var messageBody = JsonSerializer.Serialize(new
+        {
+            ImageId = metadata.Id,
+            S3Key = key,
+            BucketName = _awsOptions.BucketName
+        });
+
+        await _sqsClient.SendMessageAsync(queueUrl.QueueUrl, messageBody);
+        Console.WriteLine("---> SQS Message Sent!");
+
         return Ok(new { metadata.Id, metadata.S3Url });
     }
-    // [HttpGet]
-    // public async Task<IActionResult> GetAll()
-    // {
-    //     // Fetch all records from Postgres, ordered by most recent
-    //     var images = await _context.Images
-    //         .OrderByDescending(i => i.Id)
-    //         .ToListAsync();
-
-    //     return Ok(images);
-    // }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
