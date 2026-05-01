@@ -1,0 +1,16 @@
+spring:
+  # config:
+  #   import: optional:file:../.env[.properties]
+  application:
+    name: image-worker
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION:us-east-1}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+      sqs:
+        endpoint: ${AWS_SERVICE_URL}
+      s3:
+        endpoint: ${AWS_SERVICE_URL}
