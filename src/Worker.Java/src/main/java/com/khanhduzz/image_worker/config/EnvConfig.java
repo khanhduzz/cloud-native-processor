@@ -18,6 +18,8 @@ public class EnvConfig {
         dotenv.entries().forEach(entry -> {
             if (System.getProperty(entry.getKey()) == null) {
                 System.setProperty(entry.getKey(), entry.getValue());
+                // System.out.println("---> Loaded env variable: " + entry.getKey() + "=" +
+                // entry.getValue());
             }
         });
 

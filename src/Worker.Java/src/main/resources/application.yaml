@@ -1,6 +1,4 @@
 spring:
-  # config:
-  #   import: optional:file:../.env[.properties]
   application:
     name: image-worker
   cloud:
@@ -11,6 +9,19 @@ spring:
         access-key: ${AWS_ACCESS_KEY_ID}
         secret-key: ${AWS_SECRET_ACCESS_KEY}
       sqs:
-        endpoint: ${AWS_SERVICE_URL}
+        endpoint: ${AWS_SERVICE_URL:http://localhost:4566}
       s3:
-        endpoint: ${AWS_SERVICE_URL}
+        endpoint: ${AWS_SERVICE_URL:http://localhost:4566}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/thumbnail_db
+    username: ${DB_USER:dev_user}
+    password: ${DB_PASSWORD:dev_password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+aws:
+  s3:
+    bucket: ${S3_BUCKET_NAME:cloud-native}
+  sqs:
+    queue-name: ${SQS_QUEUE_NAME:image-processing-queue}
