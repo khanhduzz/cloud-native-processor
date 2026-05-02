@@ -25,11 +25,11 @@ The system follows a decoupled microservice pattern:
 /cloud-native-processor
   ├── /infra              <-- Docker & LocalStack configs
   │     └── docker-compose.yml
-  ├── /src                <-- All source code
+  ├── /src
   │     ├── /Backend.API   <-- .NET Web API
-  │     └── /Worker.Java   <-- Java SQS Processor (Week 3)
+  │     └── /Worker.Java   <-- Java SQS Processor
   ├── .gitignore
-  └── README.md           <-- Your "English Portfolio" piece
+  └── README.md
 ```
 
 ## Getting Started
@@ -123,4 +123,62 @@ awslocal sqs get-queue-attributes --queue-url {S3_SERVICE_URL}/000000000000/{SQS
 # Access DB via terminal
 docker exec -it cloud_postgres psql -U {DB_USER} -d {DB_NAME}
 
+```
+
+## 🏗️ Project Architecture
+
+```mermaid
+flowchart TD
+    %% Main Flow
+    Client[Client]
+    --> Upload[Upload Image<br/>.NET API]
+
+    Upload --> S3_1[Upload Image to S3<br/>LocalStack S3]
+    Upload --> DB_NET[Save Metadata<br/>.NET PostgreSQL]
+
+    S3_1 --> SQS[Send Message to SQS<br/>LocalStack SQS]
+
+    SQS --> Consumer[SQS Consumer<br/>Java Service]
+
+    Consumer --> Download[Download Image from S3]
+    Download --> Resize[Resize Image]
+    Resize --> S3_2[Upload Resized Image to S3]
+    S3_2 --> DB_JAVA[Save Metadata<br/>Java PostgreSQL]
+
+    DB_JAVA --> UI[Web UI<br/>View & Download Images]
+
+    %% Infrastructure Layer
+    subgraph Infrastructure
+        direction TB
+        LocalStack[LocalStack<br/> S3 + SQS]
+        Postgres[(PostgreSQL)]
+        PgAdmin[pgAdmin]
+        Docker[Docker Compose]
+
+        LocalStack --- Postgres
+        LocalStack --- PgAdmin
+    end
+
+    %% Connections to Infrastructure
+    S3_1 -.-> LocalStack
+    SQS -.-> LocalStack
+    Download -.-> LocalStack
+    S3_2 -.-> LocalStack
+    DB_NET -.-> Postgres
+    DB_JAVA -.-> Postgres
+
+    %% Styling
+    classDef client fill:#4ade80,stroke:#166534,color:#166534
+    classDef net fill:#512BD4,stroke:#fff,color:#fff
+    classDef java fill:#007396,stroke:#fff,color:#fff
+    classDef aws fill:#FF9900,stroke:#232F3E,color:#fff
+    classDef db fill:#475569,stroke:#fff,color:#fff
+    classDef ui fill:#8b5cf6,stroke:#fff,color:#fff
+
+    class Client client
+    class Upload,DB_NET net
+    class Consumer,Download,Resize,S3_2,DB_JAVA,UI java
+    class LocalStack,Docker aws
+    class Postgres,DB_NET,DB_JAVA db
+    class UI ui
 ```
