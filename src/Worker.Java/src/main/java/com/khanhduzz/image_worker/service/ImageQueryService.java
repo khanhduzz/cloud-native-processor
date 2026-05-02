@@ -2,6 +2,7 @@ package com.khanhduzz.image_worker.service;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -26,20 +27,25 @@ public class ImageQueryService {
     public List<ImageResponse> getAllImages() {
         return repository.findAll().stream().map(entity -> {
 
-            String originalUrl = generatePresignedUrl(
-                    entity.getBucket(),
-                    entity.getOriginalFileName());
-
             String thumbnailUrl = generatePresignedUrl(
                     entity.getBucket(),
                     entity.getThumbnailFileName());
 
             return new ImageResponse(
                     entity.getId().toString(),
-                    originalUrl,
                     thumbnailUrl);
 
         }).toList();
+    }
+
+    public Map<String, String> getDownloadUrls(Long imageIds) {
+        var img = repository.findById(imageIds).orElseThrow();
+
+        String url = generateDownloadUrl(
+                img.getBucket(),
+                img.getThumbnailFileName());
+
+        return Map.of("url", url);
     }
 
     private String generatePresignedUrl(String bucket, String key) {
@@ -52,6 +58,24 @@ public class ImageQueryService {
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(60))
                 .getObjectRequest(getObjectRequest)
+                .build();
+
+        return presigner.presignGetObject(presignRequest)
+                .url()
+                .toString();
+    }
+
+    public String generateDownloadUrl(String bucket, String key) {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .responseContentDisposition(
+                        "attachment; filename=\"" + key + "\"")
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(10))
+                .getObjectRequest(request)
                 .build();
 
         return presigner.presignGetObject(presignRequest)

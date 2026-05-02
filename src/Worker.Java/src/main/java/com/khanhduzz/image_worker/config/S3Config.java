@@ -17,7 +17,7 @@ public class S3Config {
     @Bean
     public S3Presigner s3Presigner(
             @Value("${spring.cloud.aws.region.static}") String region,
-            @Value("${AWS_SERVICE_URL:http://localhost:4566}") String endpoint) {
+            @Value("${AWS_S3_LOCALSTACK_URL:http://s3.localhost.localstack.cloud:4566}") String endpoint) {
         return S3Presigner.builder()
                 .region(Region.of(region))
                 .endpointOverride(URI.create(endpoint))

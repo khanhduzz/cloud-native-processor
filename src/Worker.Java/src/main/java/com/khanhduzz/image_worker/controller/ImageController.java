@@ -1,6 +1,7 @@
 package com.khanhduzz.image_worker.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -20,5 +21,10 @@ public class ImageController {
     @GetMapping
     public List<ImageResponse> getImages() {
         return service.getAllImages();
+    }
+
+    @GetMapping("{id}/download")
+    public Map<String, String> getDownloadUrl(@PathVariable Long id) {
+        return service.getDownloadUrls(id);
     }
 }
