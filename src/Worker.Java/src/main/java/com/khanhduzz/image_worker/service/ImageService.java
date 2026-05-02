@@ -28,6 +28,10 @@ public class ImageService {
         this.imageRepository = imageRepository;
     }
 
+    public void processImage(String bucket, String s3Key, String imageId) {
+        processImage(new ImageMessage(bucket, s3Key, imageId));
+    }
+
     public void processImage(ImageMessage message) {
         Path tempFile = null;
         Path thumbnail = null;
@@ -44,7 +48,8 @@ public class ImageService {
                             .key(s3Key)
                             .build());
 
-            tempFile = Files.createTempFile("tempImage-", s3Key);
+            String safeName = s3Key.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+            tempFile = Files.createTempFile("tempImage-", safeName);
             Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
 
             // 2. Create thumbnail

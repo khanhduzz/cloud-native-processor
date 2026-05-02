@@ -25,3 +25,6 @@ aws:
     bucket: ${S3_BUCKET_NAME:cloud-native}
   sqs:
     queue-name: ${SQS_QUEUE_NAME:image-processing-queue}
+app:
+  sqs:
+    enabled: true

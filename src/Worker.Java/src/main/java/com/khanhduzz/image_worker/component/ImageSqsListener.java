@@ -1,5 +1,6 @@
 package com.khanhduzz.image_worker.component;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +9,7 @@ import com.khanhduzz.image_worker.service.ImageService;
 
 import io.awspring.cloud.sqs.annotation.SqsListener;
 
+@ConditionalOnProperty(name = "app.sqs.enabled", havingValue = "true")
 @Component
 public class ImageSqsListener {
     private final ImageService imageService;
