@@ -1,51 +1,220 @@
 <!doctype html>
-<html>
+<html lang="en" data-theme="light">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Image Gallery</title>
-  </head>
-  <body>
-    <h1>Image Gallery</h1>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ImageForge • Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
 
-    <div id="gallery"></div>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
-    <script>
-      async function loadImages() {
-        const res = await fetch("/images");
-        const images = await res.json();
-
-        const container = document.getElementById("gallery");
-
-        images.forEach((img) => {
-          const div = document.createElement("div");
-          div.style.marginBottom = "20px";
-
-          // Image preview
-          const image = document.createElement("img");
-          image.src = img.thumbnailUrl;
-          image.width = 200;
-
-          // Download button
-          const btn = document.createElement("button");
-          btn.innerText = "Download";
-
-          btn.onclick = async () => {
-            const res = await fetch(`/images/${img.id}/download`);
-            const data = await res.json();
-
-            window.open(data.url, "_blank"); // trigger download
-          };
-
-          div.appendChild(image);
-          div.appendChild(document.createElement("br"));
-          div.appendChild(btn);
-
-          container.appendChild(div);
-        });
+      body {
+        font-family: "Inter", system-ui, sans-serif;
       }
 
-      loadImages();
+      .image-card {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .image-card:hover {
+        transform: translateY(-12px);
+        box-shadow:
+          0 20px 25px -5px rgb(0 0 0 / 0.1),
+          0 8px 10px -6px rgb(0 0 0 / 0.1);
+      }
+
+      .thumbnail {
+        transition: transform 0.6s ease;
+      }
+
+      .image-card:hover .thumbnail {
+        transform: scale(1.08);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen transition-colors"
+  >
+    <!-- Header -->
+    <header
+      class="sticky top-0 z-50 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg"
+    >
+      <div class="max-w-7xl mx-auto px-6 py-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center"
+            >
+              <i class="fas fa-magic text-white text-2xl"></i>
+            </div>
+            <div>
+              <h1 class="text-3xl font-semibold tracking-tight">ImageForge</h1>
+              <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                Smart Image Processing
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <!-- Theme Toggle -->
+            <button
+              aria-label="toggle"
+              onclick="toggleTheme()"
+              id="theme-toggle"
+              class="p-3 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all text-xl"
+            >
+              <i class="fas fa-sun"></i>
+            </button>
+
+            <button
+              onclick="loadImages()"
+              class="flex items-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white rounded-2xl hover:scale-105 transition-all font-medium"
+            >
+              <i class="fas fa-sync"></i>
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-12">
+      <div class="mb-12">
+        <h2 class="text-5xl font-bold tracking-tight mb-3">Image Gallery</h2>
+        <p class="text-zinc-600 dark:text-zinc-400 text-lg">
+          Original and intelligently resized images
+        </p>
+      </div>
+
+      <div
+        id="gallery"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8"
+      >
+        <!-- JS populated -->
+      </div>
+
+      <div id="empty-state" class="hidden text-center py-24">
+        <div
+          class="mx-auto w-24 h-24 bg-zinc-100 dark:bg-zinc-800 rounded-3xl flex items-center justify-center mb-6"
+        >
+          <i class="fas fa-images text-5xl text-zinc-400"></i>
+        </div>
+        <h3 class="text-2xl font-semibold text-zinc-400">No images yet</h3>
+        <p class="text-zinc-500 mt-2">Upload some images to get started</p>
+      </div>
+    </div>
+
+    <script>
+      function updateThemeIcon() {
+        const icon = document.querySelector("#theme-toggle i");
+        const isDark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        icon.classList.toggle("fa-sun", !isDark);
+        icon.classList.toggle("fa-moon", isDark);
+      }
+
+      function toggleTheme() {
+        const html = document.documentElement;
+        if (html.getAttribute("data-theme") === "light") {
+          html.setAttribute("data-theme", "dark");
+        } else {
+          html.setAttribute("data-theme", "light");
+        }
+        updateThemeIcon();
+      }
+
+      async function loadImages() {
+        const gallery = document.getElementById("gallery");
+        const empty = document.getElementById("empty-state");
+        gallery.innerHTML = "";
+
+        try {
+          const res = await fetch("/images");
+          const images = await res.json();
+
+          if (!images || images.length === 0) {
+            empty.classList.remove("hidden");
+            return;
+          }
+
+          empty.classList.add("hidden");
+
+          images.forEach((img) => {
+            const card = document.createElement("div");
+            card.className = `image-card bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm`;
+
+            card.innerHTML = `
+            <div class="relative">
+              <img src="${img.thumbnailUrl || img.url}" 
+                   class="thumbnail w-full aspect-square object-cover" 
+                   alt="${img.fileName || "Image"}">
+
+              ${
+                img.isResized
+                  ? `
+              <div class="absolute top-4 left-4 bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-2xl shadow">
+                RESIZED
+              </div>`
+                  : ""
+              }
+
+              <button onclick="event.stopImmediatePropagation(); downloadImage('${img.id}')"
+                      class="absolute bottom-4 right-4 bg-white dark:bg-zinc-800 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all shadow-lg text-zinc-800 dark:text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 text-sm font-medium">
+                <i class="fas fa-download"></i>
+                Download
+              </button>
+            </div>
+
+            <div class="p-5">
+              <p class="font-semibold text-base line-clamp-1">${img.fileName || "Untitled Image"}</p>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                ${new Date(img.uploadedAt || Date.now()).toLocaleDateString(
+                  "en-US",
+                  {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  },
+                )}
+              </p>
+            </div>
+          `;
+
+            gallery.appendChild(card);
+          });
+        } catch (err) {
+          console.error(err);
+          gallery.innerHTML = `<div class="col-span-full text-center py-20 text-red-500">Failed to load images</div>`;
+        }
+      }
+
+      async function downloadImage(id) {
+        try {
+          const res = await fetch(`/images/${id}/download`);
+          const data = await res.json();
+          if (data.url) {
+            const a = document.createElement("a");
+            a.href = data.url;
+            a.download = "";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        } catch (e) {
+          alert("Download failed. Please try again.");
+        }
+      }
+
+      // Initialize
+      window.onload = () => {
+        loadImages();
+        updateThemeIcon();
+      };
     </script>
   </body>
 </html>
